@@ -18,11 +18,10 @@
 import os, subprocess
 
 from gi import require_version
-require_version('Gtk', '3.0')
-require_version('Nautilus', '3.0')
 
 from gi.repository import Nautilus, GObject
-from gettext import gettext, locale, bindtextdomain, textdomain
+from gettext import gettext, bindtextdomain, textdomain
+import locale
 
 ROOT_UID = 0
 NAUTILUS_PATH="@NAUTILUS_PATH@"
@@ -34,7 +33,8 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
 	def __init__(self):
 		pass
 
-	def get_file_items(self, window, files):
+	def get_file_items(self, *args):
+		files = args[-1]
 		"""Returns the menu items to display when one or more files/folders are
 		selected."""
 		# Don't show when already running as root, or when more than 1 file is selected
@@ -45,7 +45,6 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
 		# Add the menu items
 		items = []
 		self._setup_gettext();
-		self.window = window
 		if file.get_uri_scheme() == "file": # must be a local file/directory
 			if file.is_directory():
 				if os.path.exists(NAUTILUS_PATH):
@@ -56,7 +55,8 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
 
 		return items
 
-	def get_background_items(self, window, file):
+	def get_background_items(self, *args):
+		files = args[-1]
 		"""Returns the menu items to display when no file/folder is selected
 		(i.e. when right-clicking the background)."""
 		# Don't show when already running as root
@@ -66,10 +66,9 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
 		# Add the menu items
 		items = []
 		self._setup_gettext();
-		self.window = window
-		if file.is_directory() and file.get_uri_scheme() == "file":
+		if files.is_directory() and files.get_uri_scheme() == "file":
 			if os.path.exists(NAUTILUS_PATH):
-				items += [self._create_nautilus_item(file)]
+				items += [self._create_nautilus_item(files)]
 
 		return items
 
