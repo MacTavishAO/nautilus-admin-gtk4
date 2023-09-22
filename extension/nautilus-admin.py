@@ -19,7 +19,6 @@ import locale
 import os
 import subprocess
 from gettext import gettext, bindtextdomain, textdomain
-
 from gi.repository import Nautilus, GObject, Gio
 
 ROOT_UID = 0
