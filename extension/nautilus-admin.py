@@ -22,7 +22,7 @@ from gettext import gettext, bindtextdomain, textdomain
 from gi.repository import Nautilus, GObject, Gio
 
 ROOT_UID = 0
-NAUTILUS_PATH = "/usr/bin/nautilus"
+NAUTILUS_PATH="@NAUTILUS_PATH@"
 
 
 class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
