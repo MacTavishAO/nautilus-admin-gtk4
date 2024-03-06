@@ -103,7 +103,11 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
         """'Edit as Administrator' menu item callback."""
         uri = file.get_uri()
         admin_uri = uri.replace("file://", "admin://")
-        content_type = Gio.content_type_guess()
-        text_editor = Gio.app_info_get_default_for_type(content_type[0], True).get_executable()
+        content_type = Gio.content_type_guess(uri)
+        try:
+            text_editor = Gio.app_info_get_default_for_type(content_type[0], True).get_executable()
+        except AttributeError:
+            print(f"Couldn't find a default application for {str(content_type)} mime type, falling back to text/plain.")
+            text_editor = Gio.app_info_get_default_for_type("text/plain", True).get_executable()
         if text_editor is not None:
             subprocess.Popen([text_editor, admin_uri])
