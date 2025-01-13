@@ -8,14 +8,13 @@ adds some administrative actions to the right-click menu:
 
 *   **Open as Administrator**: opens a folder in a new Nautilus window running
     with administrator (root) privileges.
-*   **Edit as Administrator**: Open a (or many) file/s in your preferred Text Editor
+*   **Edit as Administrator**: Open a (or many) file/s in your preferred Text Editor as root
 
 
 ## Compiling from source
 
 Check the [INSTALL.md][install] file for instruction on how to compile the
 extension from source.
-
 
 ## Reporting bugs
 
