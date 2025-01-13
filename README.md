@@ -21,12 +21,6 @@ extension from source.
 
 You can report bugs and ask questions at the extension's [issue tracker][issues].
 
-
-## Contributing
-
-Check the [CONTRIBUTING.md][contribute] file for info on how to contribute.
-
-
 [install]: INSTALL.md
 [homepage]: https://github.com/brunonova/nautilus-admin
 [issues]: https://github.com/brunonova/nautilus-admin/issues
