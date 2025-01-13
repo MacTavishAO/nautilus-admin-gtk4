@@ -1,3 +1,10 @@
+v2.0.0
+------
+
+* Make the code far more portable using Gio methods to get the default text editor.
+* Remove the hardcoded path of nautilus cmakefiles
+* install the extension in user's XDG_DATA_DIR (aka $HOME/.local/share)
+
 v1.1.9
 ------
 
