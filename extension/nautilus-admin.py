@@ -17,12 +17,11 @@
 
 import locale
 import os
-import subprocess
 from gettext import gettext, bindtextdomain, textdomain
 from gi.repository import Nautilus, GObject, Gio
 
 ROOT_UID = 0
-NAUTILUS_PATH="@NAUTILUS_PATH@"
+NAUTILUS_APP_ID = "org.gnome.Nautilus.desktop"
 
 
 class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
@@ -30,43 +29,53 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
     the right-click menu, using GNOME's new admin backend."""
 
     def __init__(self):
-        pass
+        # Get an instance of system's nautilus extension in a portable way with Nautilus's application ID (works like a package name)
+        self.nautilus = Gio.DesktopAppInfo.new(NAUTILUS_APP_ID)
+
+        # Get the system's default plain text file handler
+        # TODO: Figure out how to avoid hardcoding "plain"
+        self.text_editor = Gio.AppInfo.get_default_for_type("text/plain", True)
 
     def get_file_items(self, files):
         """Returns the menu items to display when one or more files/folders are
         selected."""
-        # Don't show when already running as admin, or when more than 1 file is selected
-        if os.geteuid() == ROOT_UID or len(files) != 1:
+        # Don't show when already running as admin
+        if os.geteuid() == ROOT_UID:
             return
-        file = files[0]
 
-        # Add the menu items
-        items = []
+        # Return if no files have been selected
+        if len(files) == 0:
+            return
+
         self._setup_gettext()
-        if file.get_uri_scheme() == "file":  # must be a local file/directory
+
+        if len(files) == 1:
+            file = files[0]
+
             if file.is_directory():
-                if os.path.exists(NAUTILUS_PATH):
-                    items += [self._create_nautilus_item(file)]
-            else:
-                items += [self._create_edit_file_as_admin_item(file)]
+                return [self._create_selected_dir_item(file)]
+            elif file.get_mime_type().startswith("text/"):
+                return [self._create_edit_file_item([file])]
 
-        return items
+        for file in files:
+            if file.is_directory() or not file.get_mime_type().startswith("text/"):
+                return
 
-    def get_background_items(self, file):
+        return [self._create_edit_file_item(files)]
+
+    def get_background_items(self, curr_dir):
         """Returns the menu items to display when no file/folder is selected
         (i.e. when right-clicking the background)."""
+
         # Don't show when already running as admin
         if os.geteuid() == ROOT_UID:
             return
 
         # Add the menu items
-        items = []
         self._setup_gettext()
-        if file.is_directory() and file.get_uri_scheme() == "file":
-            if os.path.exists(NAUTILUS_PATH):
-                items += [self._create_nautilus_item(file)]
 
-        return items
+        if curr_dir.is_directory() and curr_dir.get_uri_scheme() == "file":
+            return [self._create_current_dir_item(curr_dir)]
 
     def _setup_gettext(self):
         """Initializes gettext to localize strings."""
@@ -74,40 +83,56 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
             locale.setlocale(locale.LC_ALL, "")
         except:
             pass
+
         bindtextdomain("nautilus-admin", "@CMAKE_INSTALL_PREFIX@/share/locale")
         textdomain("nautilus-admin")
 
-    def _nautilus_run(self, _, file):
-        """'Open as Administrator' menu item callback."""
-        uri = file.get_uri()
-        admin_uri = uri.replace("file://", "admin://")
-        subprocess.Popen([NAUTILUS_PATH, admin_uri])
+    def _create_current_dir_item(self, dir):
+        if self.nautilus is None:
+            return None
 
-    def _create_nautilus_item(self, file):
+        item = Nautilus.MenuItem(name="NautilusAdmin::NautilusCurrent",
+                                 label=gettext("Open current as Admin"),
+                                 tip=gettext("Open currently opened folder as Admin"))
+
+        item.connect("activate", self._open_nautilus, dir)
+        return item
+
+    def _create_selected_dir_item(self, dir):
+        if self.nautilus is None:
+            return None
+
         """Creates the 'Open as Administrator' menu item."""
         item = Nautilus.MenuItem(name="NautilusAdmin::Nautilus",
-                                 label=gettext("Open as admin"),
+                                 label=gettext("Open as Admin"),
                                  tip=gettext("Open this folder with admin privileges"))
-        item.connect("activate", self._nautilus_run, file)
+
+        item.connect("activate", self._open_nautilus, dir)
         return item
 
-    def _create_edit_file_as_admin_item(self, file):
+    def _create_edit_file_item(self, files):
+        if self.text_editor is None:
+            return None
+
         """Creates the 'Edit as Administrator' menu item."""
         item = Nautilus.MenuItem(name="NautilusAdmin::TextEditor",
-                                 label=gettext("Edit as admin"),
+                                 label=gettext("Edit as Admin"),
                                  tip=gettext("Open this file in the default text editor with admin privileges"))
-        item.connect("activate", self._edit_file, file)
+
+        item.connect("activate", self._edit_file, files)
         return item
 
-    def _edit_file(self, _, file):
-        """'Edit as Administrator' menu item callback."""
-        uri = file.get_uri()
-        admin_uri = uri.replace("file://", "admin://")
-        content_type = Gio.content_type_guess(uri)
-        try:
-            text_editor = Gio.app_info_get_default_for_type(content_type[0], True).get_executable()
-        except AttributeError:
-            print(f"Couldn't find a default application for {str(content_type)} mime type, falling back to text/plain.")
-            text_editor = Gio.app_info_get_default_for_type("text/plain", True).get_executable()
-        if text_editor is not None:
-            subprocess.Popen([text_editor, admin_uri])
+    def _edit_file(self, _, files):
+        uris = []
+        for file in files:
+            path = file.get_location().get_path()
+            uri = f"admin:{path}"
+            uris.append(uri)
+
+        self.text_editor.launch_uris(uris)
+
+    def _open_nautilus(self, _, dir):
+        path = dir.get_location().get_path()
+        uri = f"admin:{path}"
+        print(uri)
+        self.nautilus.launch_uris([uri])

@@ -1,3 +1,15 @@
+v2.0.0
+------
+
+* Make the code far more portable using Gio methods to get the default text editor.
+* Remove the hardcoded path of nautilus cmakefiles
+<<<<<<< HEAD
+* install the extension in user's XDG_DATA_DIR (aka $HOME/.local/share)
+=======
+* Install the extension in user's XDG_DATA_DIR (aka $HOME/.local/share)
+* Remove the single file limit an allow for multiple files or multiple directories to be opened (assuming the selection contains only plain text files or only directories, if the selection is not homogeneous, the menu item isn't shown)
+>>>>>>> 0ac35d6 (Make the code more portable)
+
 v1.1.9
 ------
 

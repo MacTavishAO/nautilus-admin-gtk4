@@ -8,14 +8,7 @@ adds some administrative actions to the right-click menu:
 
 *   **Open as Administrator**: opens a folder in a new Nautilus window running
     with administrator (root) privileges.
-*   **Edit as Administrator**: opens a file in a Gedit window running with
-    administrator (root) privileges.
-
-
-## Download
-
-You can download the latest version of the extension from the
-[Releases][download] page.
+*   **Edit as Administrator**: Open a (or many) file/s in your preferred Text Editor as root
 
 
 ## Compiling from source
@@ -23,20 +16,10 @@ You can download the latest version of the extension from the
 Check the [INSTALL.md][install] file for instruction on how to compile the
 extension from source.
 
-
 ## Reporting bugs
 
 You can report bugs and ask questions at the extension's [issue tracker][issues].
 
-
-## Contributing
-
-Check the [CONTRIBUTING.md][contribute] file for info on how to contribute.
-
-
-
 [install]: INSTALL.md
-[contribute]: CONTRIBUTING.md
 [homepage]: https://github.com/brunonova/nautilus-admin
-[download]: https://github.com/brunonova/nautilus-admin/releases
 [issues]: https://github.com/brunonova/nautilus-admin/issues
