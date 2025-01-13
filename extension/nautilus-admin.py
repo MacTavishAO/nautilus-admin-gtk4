@@ -17,9 +17,7 @@
 
 import locale
 import os
-import urllib
 from gettext import gettext, bindtextdomain, textdomain
-import urllib.parse
 from gi.repository import Nautilus, GObject, Gio
 
 ROOT_UID = 0
@@ -51,28 +49,21 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
 
         self._setup_gettext()
 
-        contains_files = False
-        contains_dir = False
+        if len(files) == 1:
+            file = files[0]
+
+            if file.is_directory():
+                return [self._create_selected_dir_item(file)]
+            elif file.get_mime_type().startswith("text/"):
+                return [self._create_edit_file_item([file])]
 
         for file in files:
-            if file.is_directory():
-                contains_dir = True
-            else:
-                if file.get_mime_type().startswith("text/"):
-                    contains_files = True
+            if file.is_directory() or not file.get_mime_type().startswith("text/"):
+                return
 
-            if contains_files and contains_dir:
-                break
+        return [self._create_edit_file_item(files)]
 
-        if files[0].get_uri_scheme() == "file" and (contains_files ^ contains_dir):
-            if contains_dir:
-                return [self._create_nautilus_item(files)]
-            elif contains_files:
-                return [self._create_edit_file_as_admin_item(files)]
-        else:
-            print("Non-homogenous items selected or already in admin mode")
-
-    def get_background_items(self, file):
+    def get_background_items(self, curr_dir):
         """Returns the menu items to display when no file/folder is selected
         (i.e. when right-clicking the background)."""
 
@@ -82,8 +73,9 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
 
         # Add the menu items
         self._setup_gettext()
-        if file.is_directory() and file.get_uri_scheme() == "file":
-            return [self._create_nautilus_item([file])]
+
+        if curr_dir.is_directory() and curr_dir.get_uri_scheme() == "file":
+            return [self._create_current_dir_item([curr_dir])]
 
     def _setup_gettext(self):
         """Initializes gettext to localize strings."""
@@ -95,19 +87,18 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
         bindtextdomain("nautilus-admin", "@CMAKE_INSTALL_PREFIX@/share/locale")
         textdomain("nautilus-admin")
 
-    def _nautilus_run(self, _, files):
-        uris = []
+    def _create_current_dir_item(self, dir):
+        if self.nautilus is None:
+            return None
 
-        for i in range(len(files)):
-            uris.append(
-                urllib.parse.urlparse(
-                    files[i].get_location().get_path(), "admin"
-                ).geturl()
-            )
+        item = Nautilus.MenuItem(name="NautilusAdmin::NautilusCurrent",
+                                 label=gettext("Open current as Admin"),
+                                 tip=gettext("Open currently opened folder as Admin"))
 
-        self.nautilus.launch_uris(uris)
+        item.connect("activate", self._open_nautilus, dir)
+        return item
 
-    def _create_nautilus_item(self, files):
+    def _create_selected_dir_item(self, dir):
         if self.nautilus is None:
             return None
 
@@ -116,10 +107,10 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
                                  label=gettext("Open as Admin"),
                                  tip=gettext("Open this folder with admin privileges"))
 
-        item.connect("activate", self._nautilus_run, files)
+        item.connect("activate", self._open_nautilus, dir)
         return item
 
-    def _create_edit_file_as_admin_item(self, files):
+    def _create_edit_file_item(self, files):
         if self.text_editor is None:
             return None
 
@@ -133,11 +124,15 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
 
     def _edit_file(self, _, files):
         uris = []
-        for i in range(len(files)):
-            uris.append(
-                urllib.parse.urlparse(
-                    files[i].get_location().get_path(), "admin"
-                ).geturl()
-            )
+        for file in files:
+            path = file.get_location().get_path()
+            uri = f"admin:{path}"
+            uris.append(uri)
 
         self.text_editor.launch_uris(uris)
+
+    def _open_nautilus(self, _, dir):
+        path = dir.get_location().get_path()
+        uri = f"admin:{path}"
+        print(uri)
+        self.nautilus.launch_uris([uri])
