@@ -75,7 +75,7 @@ class NautilusAdmin(Nautilus.MenuProvider, GObject.GObject):
         self._setup_gettext()
 
         if curr_dir.is_directory() and curr_dir.get_uri_scheme() == "file":
-            return [self._create_current_dir_item([curr_dir])]
+            return [self._create_current_dir_item(curr_dir)]
 
     def _setup_gettext(self):
         """Initializes gettext to localize strings."""
